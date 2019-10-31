@@ -68,13 +68,13 @@
       .text("Pokemon: Special Defense vs Total Stats");
 
     svgContainer.append('text')
-      .attr('x', 130)
+      .attr('x', 200)
       .attr('y', 490)
       .style('font-size', '10pt')
       .text('Special Defense');
 
     svgContainer.append('text')
-      .attr('transform', 'translate(15, 300)rotate(-90)')
+      .attr('transform', 'translate(15, 270)rotate(-90)')
       .style('font-size', '10pt')
       .text('Total');
   }
