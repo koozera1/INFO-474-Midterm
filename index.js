@@ -4,13 +4,32 @@
 
   let data = "no data";
   let svgContainer = ""; // keep SVG reference in global scope
+  let colors = {
+    "Bug": "#4E79A7",
+    "Dark": "#A0CBE8",
+    "Electric": "#F28E2B",
+    "Fairy": "#FFBE&D",
+    "Fighting": "#59A14F",
+    "Fire": "#8CD17D",
+    "Ghost": "#B6992D",
+    "Grass": "#499894",
+    "Ground": "#86BCB6",
+    "Ice": "#86BCB6",
+    "Normal": "#E15759",
+    "Poison": "#FF9D9A",
+    "Psychic": "#79706E",
+    "Steel": "#BAB0AC",
+    "Water": "#D37295",
+    "Dragon": "#b051ce",
+    "Rock": "#54ff9f"
+}
 
   // load data and make scatter plot after window loads
   window.onload = function() {
     svgContainer = d3.select('body')
       .append('svg')
-      .attr('width', 500)
-      .attr('height', 500)
+      .attr('width', 1000)
+      .attr('height', 510)
 
     // d3.csv is basically fetch but it can be be passed a csv file as a parameter
     d3.csv("pokemon.csv")
@@ -82,8 +101,8 @@
       .append('circle')
         .attr('cx', xMap)
         .attr('cy', yMap)
-        .attr('r', 2)
-        .attr('fill', "#4286f4")
+        .attr('r', 3)
+        .attr('fill', function(d) {return colors[d["Type 1"]]})
         
         // add tooltip functionality to points
         .on("mouseover", (d) => {
@@ -100,11 +119,63 @@
             .style("opacity", 0);
         });
 
+        // create the label for the legend
+        svgContainer.append('text')
+            .attr('x', 543)
+            .attr('y', 70)
+            .text("Legend")
+            .style('font-size', '13pt')
+
+        // get the svg area for the legend
+        var Svg = svgContainer.append('g')
+        .attr('transform', 'translate(450, 0)')
+
+        // create a list of the keys and values of the colors
+        var keys = Object.keys(colors)
+        var values = Object.values(colors)
+
+
+        // color scale for the legend
+        var color = d3.scaleOrdinal()
+        .domain(keys)
+        .range(values);
+
+        // Add one dot in the legend for each name
+        Svg.selectAll("mydots")
+        .data(keys)
+        .enter()
+        .append("circle")
+            .attr("cx", 100)
+            .attr("cy", function(d,i){ return 100 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+            .attr("r", 7)
+            .style("fill", function(d){ return color(d)})
+
+        // Add one label in the legend for each name
+        Svg.selectAll("mylabels")
+        .data(keys)
+        .enter()
+        .append("text")
+            .attr("x", 120)
+            .attr("y", function(d,i){ return 100 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+            .style("fill", function(d){ return color(d)})
+            .text(function(d){ return d})
+            .attr("text-anchor", "left")
+            .style("alignment-baseline", "middle")
+
+
+
+
+
+        // Label for Generation filter
+        d3.select("#filter")
+                .append("b")
+                .text(" Generation: ")
+
         let genMap = d3.map(data, function(d){return d.Generation})
-        console.log(genMap)
-        genMap.set("All", function(d) { return d.Generation})
+        genMap.set("All")
+
         //make drop down for generation
-        var dropDownGen = d3.select("#filter").append("select")
+        var dropDownGen = d3.select("#filter").append("select").attr("id", "gen")
           .attr("name", "Generation");
 
         var optionsGen = dropDownGen.selectAll("option")
@@ -119,19 +190,67 @@
 
 
             dropDownGen.on("change", function() {
-              var selected = this.value;
-              var displayOthers = this.checked ? "inline" : "none";
-              var display = this.checked ? "none" : "inline";
+                filterCircles();
+             });
 
 
-              dot
-                  .filter(function(d) {return selected != d.Generation;})
-                  .attr("display", displayOthers);
-  
-              dot
-                  .filter(function(d) {return selected == d.Generation;})
-                  .attr("display", display)
-            });
+            let legendMap = d3.map(data, function(d){return d.Legendary})
+            legendMap.set("All")
+
+            d3.select("#filter")
+                .append("b")
+                .text(" Legendary: ")
+
+            //make drop down for legendary
+            var dropDownLegend = d3.select("#filter").append("select").attr("id", "legend")
+            .attr("name", "Legendary");
+
+            var optionsLegend = dropDownLegend.selectAll("option")
+                .data(legendMap.keys())
+                .enter()
+                .append("option");
+
+
+
+            optionsLegend.text(function (d) { return d; })
+                .attr("value", function (d) { return d; });
+
+
+                dropDownLegend.on("change", function() {
+                    filterCircles();
+                });
+
+
+                function filterCircles() {
+                    dot
+                        .attr("display", "none")
+
+
+                    let legendValue = d3.select("#legend").node().value
+                    let genValue = d3.select("#gen").node().value
+
+                    if (legendValue == "All" && genValue == "All") {
+                        dot
+                            .attr("display", "inline")
+                    }
+
+                    if (legendValue == "All") {
+                        dot 
+                            .filter(function(d) {return genValue == d.Generation})
+                            .attr("display", "inline")
+                    }
+
+                    if (genValue == "All") {
+                        dot 
+                            .filter(function(d) {return legendValue == d.Legendary})
+                            .attr("display", "inline")
+                    }
+
+                    dot
+                        .filter(function(d) {return legendValue == d.Legendary && genValue == d.Generation})
+                        .attr("display", "inline")
+                }
+            
   }
 
   // draw the axes and ticks
